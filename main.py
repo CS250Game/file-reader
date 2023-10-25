@@ -71,6 +71,18 @@ def findWorlds():
            worldsPaths = root + "\\.minecraft\\saves\\saves\\"
            return worldsPaths
 
+
+def trackWorld(world):
+    worldsPaths = findWorlds()
+    UID = "a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e"
+    fileName = UID + ".json"
+    if world not in os.listdir(worldsPaths):
+        print("World Not Found")
+    else:
+        path = worldsPaths + world
+        filePath = findFiles(fileName,path)
+        print(filePath[0])
+
 def trackMostRecent():
     worldsPaths = findWorlds()
     worlds = os.listdir(worldsPaths)
@@ -102,8 +114,8 @@ image = Image.open("img/Minetraxbackground.png")
 
 queries = [
     'Settings',
-    'Account',
-    'Track most recent world:',
+    'Track World',
+    'Track most recent world',
     'Exit'
 ]
 def after_click(icon, query):
@@ -111,8 +123,8 @@ def after_click(icon, query):
         print("s")
         # icon.stop()
     elif str(query) == queries[1]:
-        print("a")
-        # icon.stop()
+        world = input("Enter World Name: ")
+        trackWorld(world)
     elif str(query) == queries[2]:
         trackMostRecent()
     elif str(query) == queries[3]:
