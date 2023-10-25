@@ -99,6 +99,7 @@ def trackMostRecent():
 
 #System tray icon stuff
 image = Image.open("img/Minetraxbackground.png")
+
 queries = [
     'Settings',
     'Account',
