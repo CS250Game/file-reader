@@ -22,7 +22,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="database.ini" />
     <Compile Include="main.py" />
   </ItemGroup>
   <ItemGroup>
