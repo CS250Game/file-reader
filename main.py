@@ -5,6 +5,12 @@ import typing
 import pystray
 from PIL import Image
 
+
+global UUID
+
+#a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e
+UUID = ""
+
 class StatsFileNotFound(Exception):
     """Base error for a statistic file that was not found."""
     pass
@@ -72,9 +78,9 @@ def findWorlds():
 
 
 def trackWorld(world):
+    global UUID
     worldsPaths = findWorlds()
-    UID = "a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e"
-    fileName = UID + ".json"
+    fileName = UUID + ".json"
     if world not in os.listdir(worldsPaths):
         print("World Not Found")
     else:
@@ -83,18 +89,15 @@ def trackWorld(world):
         print(filePath[0])
 
 def trackMostRecent():
+    global UUID
     worldsPaths = findWorlds()
     worlds = os.listdir(worldsPaths)
     #search for different worlds and save the path to the directory
     #that the worlds are held
     #get the name of the worlds
-    print(worldsPaths)
-    print(worlds)
-
     #start at users file for file search
-    UID = "a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e"
 
-    fileName = UID + ".json"
+    fileName = UUID + ".json"
     # get the full path to the file
     fullFilePaths = findFiles(fileName, worldsPaths)
     mostRecentFile = fullFilePaths[0]
@@ -112,19 +115,24 @@ def trackMostRecent():
 image = Image.open("img/Minetraxbackground.png")
 
 queries = [
-    'Settings',
+    'Enter UUID',
     'Track World',
     'Track most recent world',
     'Exit'
 ]
 def after_click(icon, query):
+    global UUID
     if str(query) == queries[0]:
-        print("s")
+        UUID = input("Enter UUID: ")
         # icon.stop()
     elif str(query) == queries[1]:
+        if UUID == "":
+            UUID = input("Enter UUID: ")
         world = input("Enter World Name: ")
         trackWorld(world)
     elif str(query) == queries[2]:
+        if UUID == "":
+            UUID = input("Enter UUID: ")
         trackMostRecent()
     elif str(query) == queries[3]:
         icon.stop()
