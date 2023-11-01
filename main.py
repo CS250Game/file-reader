@@ -1,5 +1,6 @@
 import json
 import os
+from sqlite3 import connect
 import psycopg2
 import typing
 import pystray
@@ -7,9 +8,9 @@ from PIL import Image
 
 
 global UUID
-
 #a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e
 UUID = ""
+
 
 class StatsFileNotFound(Exception):
     """Base error for a statistic file that was not found."""
@@ -20,13 +21,11 @@ class StatNotFound(Exception):
     pass
 
 class StatisticsFile:
-    def __init__(self, uuid: str, world_name: str) -> None:
+    def __init__(self, uuid: str, world_name: str, file_path) -> None:
         self.uuid = uuid
         self.file_name = f"{self.uuid}.json".strip()
-        self.file_path = None
+        self.file_path = file_path
         self.world_name = world_name
-
-        #File searching logic goes here
         
     def get_stat(self, name: str) -> dict:
         """Gets a statistic from value name."""
@@ -55,9 +54,13 @@ class Database:
         self.conn = psycopg2.connect(dsn=dsn)
 
     def push(self, stat_file: StatisticsFile):
-        pass
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        INSERT INTO 
+        """)
 
 
+#minetraxDatabase = Database()
 
 #search for file and return full path
 def findFiles(name,path):
@@ -79,35 +82,48 @@ def findWorlds():
 
 def trackWorld(world):
     global UUID
+
     worldsPaths = findWorlds()
     fileName = UUID + ".json"
+
     if world not in os.listdir(worldsPaths):
         print("World Not Found")
     else:
         path = worldsPaths + world
+        #search for the file
         filePath = findFiles(fileName,path)
         print(filePath[0])
+        #create a statistics file object
+        newStatFileToPush = StatisticsFile(UUID, world, filePath[0])
+        #minetraxDatabase.push(newStatFileToPush)
+        #next push to DB
 
 def trackMostRecent():
     global UUID
     worldsPaths = findWorlds()
     worlds = os.listdir(worldsPaths)
-    #search for different worlds and save the path to the directory
-    #that the worlds are held
-    #get the name of the worlds
-    #start at users file for file search
-
     fileName = UUID + ".json"
     # get the full path to the file
     fullFilePaths = findFiles(fileName, worldsPaths)
     mostRecentFile = fullFilePaths[0]
-
+    mostRecentWorldName = ""
 
     for files in fullFilePaths:
         if os.path.getmtime(files) > os.path.getmtime(mostRecentFile):
             mostRecentFile = files
 
     print(mostRecentFile)
+
+    for name in worlds:
+        if name in mostRecentFile:
+            mostRecentWorldName = name
+
+    print(mostRecentWorldName)
+    statFileToPush = StatisticsFile(UUID, mostRecentWorldName ,mostRecentFile)
+    #minetraxDatabase.push(newStatFileToPush)
+    #create a statistics file object
+
+    #next push to DB
 
 
 
