@@ -6,6 +6,8 @@ import psycopg2
 import pystray
 from PIL import Image
 
+
+#pip install...
 class StatsFileNotFound(Exception):
     """Base error for a statistic file that was not found."""
     pass
@@ -31,16 +33,6 @@ class StatisticsFile:
         `value` can either be a int or tuple."""
         pass
 
-    @staticmethod
-    def find_uuid() -> str:
-        """Finds a UUID from a worldname."""
-        pass
-
-    @staticmethod
-    def wait_for_new_world() -> tuple:
-        """Waits for the creation of a new world. Once found, this will
-        return the world name and UUID of the stats file in a tuple."""
-        pass
 
 class Database:
     def __init__(self, username:str, password:str, host:str, port:int, database:str = 'mttesting') -> None:
@@ -50,11 +42,19 @@ class Database:
     def push(self, stat_file: StatisticsFile):
         cursor = self.conn.cursor()
         cursor.execute("""
-        INSERT INTO 
+        INSERT INTO
         """)
+        self.conn.commit()
 
+    def testPush(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        INSERT INTO MCUser(user_ID,UUID, username) VALUES ('','', 'test_from_app');
+        """)
+        self.conn.commit()
 
-#minetraxDatabase = Database()
+#minetraxDatabase = Database('', '', '',5432)
+#minetraxDatabase.testPush()
 
 #search for file and return full path
 def findFiles(name,path):
@@ -123,15 +123,18 @@ global UUID
 UUID = ""
 
 #System tray icon stuff
+image = Image.open("img/Minetraxbackground.png")
 
-def after_click(icon, query):
-    global UUID
-    queries = [
+queries = [
     'Enter UUID',
     'Track World',
     'Track most recent world',
     'Exit'
 ]
+
+
+def after_click(icon, query):
+    global UUID
 
     if str(query) == queries[0]:
         UUID = input("Enter UUID: ")
@@ -148,7 +151,7 @@ def after_click(icon, query):
     elif str(query) == queries[3]:
         icon.stop()
 
-def setup(image, queries): # Put object definitions and other code in here
+def setup(): # Put object definitions and other code in here
     icon = pystray.Icon("MT", image, "Minetrax", menu=pystray.Menu(
     pystray.MenuItem(queries[0], after_click),
     pystray.MenuItem(queries[1], after_click),
