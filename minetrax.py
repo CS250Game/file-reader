@@ -1,7 +1,6 @@
-import typing
 import json
 import os
-from sqlite3 import connect
+#from sqlite3 import connect
 import psycopg2
 import pystray
 from PIL import Image
@@ -27,15 +26,11 @@ class StatisticsFile:
         """Gets a statistic from value name."""
         pass
 
-    def search_stat(self, value: typing.Union[int, tuple])-> dict:
-        """Searches the stats file for stats with values matching the specified
-        number or multiple within the range.
-        `value` can either be a int or tuple."""
-        pass
+
 
 
 class Database:
-    def __init__(self, username:str, password:str, host:str, port:int, database:str = 'mttesting') -> None:
+    def __init__(self, username:str, password:str, host:str, port:int, database:str = 'test') -> None:
         dsn = f"postgres://{username}:{password}@{host}:{port}/{database}"
         self.conn = psycopg2.connect(dsn=dsn)
 
@@ -49,12 +44,12 @@ class Database:
     def testPush(self):
         cursor = self.conn.cursor()
         cursor.execute("""
-        INSERT INTO MCUser(user_ID,UUID, username) VALUES ('','', 'test_from_app');
+        INSERT INTO files(id,file_name) VALUES ('12', 'test_from_app_11/15');
         """)
         self.conn.commit()
 
-#minetraxDatabase = Database('', '', '',5432)
-#minetraxDatabase.testPush()
+minetraxDatabase = Database('', 'Libertybell2004', 'localhost',5432)
+minetraxDatabase.testPush()
 
 #search for file and return full path
 def findFiles(name,path):
