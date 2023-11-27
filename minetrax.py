@@ -43,8 +43,9 @@ class Database:
 
         #clean the data of stats we dont want and push the stats we want to the database
         stats = stats_data['stats']['minecraft:custom']
-        kill_data = stats_data['stats']['minecraft:killed']
-        stats.update(kill_data)
+        if 'minecraft:killed' in stats_data['stats']:
+            kill_data = stats_data['stats']['minecraft:killed']
+            stats.update(kill_data)
 
         stats_to_exclude = {"minecraft:interact_with_furnace",
         "minecraft:mob_kills",
@@ -57,7 +58,8 @@ class Database:
         }
 
         for key in stats_to_exclude:
-            del stats[key]
+            if key in stats:
+                del stats[key]
 
         for key, value in stats.items():
             print(key, value)
