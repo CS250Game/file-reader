@@ -35,11 +35,40 @@ class Database:
         self.conn = psycopg2.connect(dsn=dsn)
 
     def push(self, stat_file: StatisticsFile):
-        cursor = self.conn.cursor()
-        cursor.execute("""
-        INSERT INTO
-        """)
-        self.conn.commit()
+        stats = stat_file.file_path
+        
+        #load the json file data into a dict
+        with open(stats) as json_file:
+            stats_data = json.load(json_file)
+
+        #clean the data of stats we dont want and push the stats we want to the database
+        stats = stats_data['stats']['minecraft:custom']
+        kill_data = stats_data['stats']['minecraft:killed']
+        stats.update(kill_data)
+
+        stats_to_exclude = {"minecraft:interact_with_furnace",
+        "minecraft:mob_kills",
+        "minecraft:interact_with_crafting_table",
+        "minecraft:drop",
+        "minecraft:open_chest",
+        "minecraft:play_time",
+        "minecraft:sneak_time",
+        "minecraft:jump"
+        }
+
+        for key in stats_to_exclude:
+            del stats[key]
+
+        for key, value in stats.items():
+            print(key, value)
+
+        #push the stats we want to the database
+        
+        #cursor = self.conn.cursor()
+        #cursor.execute("""
+        #INSERT INTO 
+        #""")
+        #self.conn.commit()
 
     def testPush(self):
         cursor = self.conn.cursor()
@@ -48,8 +77,8 @@ class Database:
         """)
         self.conn.commit()
 
-minetraxDatabase = Database('', 'Libertybell2004', 'localhost',5432)
-minetraxDatabase.testPush()
+minetraxDatabase = Database('', '', 'localhost',5432)
+#minetraxDatabase.testPush()
 
 #search for file and return full path
 def findFiles(name,path):
@@ -82,7 +111,7 @@ def trackWorld(world, UUID):
         print(filePath[0])
         #create a statistics file object
         newStatFileToPush = StatisticsFile(UUID, world, filePath[0])
-        #minetraxDatabase.push(newStatFileToPush)
+        minetraxDatabase.push(newStatFileToPush)
         #next push to DB
 
 def trackMostRecent(UUID):
@@ -99,15 +128,14 @@ def trackMostRecent(UUID):
         if os.path.getmtime(files) > os.path.getmtime(mostRecentFile):
             mostRecentFile = files
 
-    print(mostRecentFile)
 
     for name in worlds:
         if name in mostRecentFile:
             mostRecentWorldName = name
 
-    print(mostRecentWorldName)
     statFileToPush = StatisticsFile(UUID, mostRecentWorldName ,mostRecentFile)
-    #minetraxDatabase.push(newStatFileToPush)
+
+    minetraxDatabase.push(statFileToPush)
     #create a statistics file object
 
     #next push to DB
