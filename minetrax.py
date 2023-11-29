@@ -1,7 +1,6 @@
-
 import json
 import os
-
+#from sqlite3 import connect
 import psycopg2
 import pystray
 from PIL import Image
@@ -31,26 +30,64 @@ class StatisticsFile:
 
 
 class Database:
-    def __init__(self, username:str, password:str, host:str, port:int, database:str = 'mttesting') -> None:
+    def __init__(self, username:str, password:str, host:str, port:int, database:str = 'test') -> None:
         dsn = f"postgres://{username}:{password}@{host}:{port}/{database}"
         self.conn = psycopg2.connect(dsn=dsn)
 
     def push(self, stat_file: StatisticsFile):
-        cursor = self.conn.cursor()
-        cursor.execute("""
-        INSERT INTO
-        """)
-        self.conn.commit()
+        stats = stat_file.file_path
         
-    def testPush(self):
+        #load the json file data into a dict
+        with open(stats) as json_file:
+            stats_data = json.load(json_file)
+
+        #clean the data of stats we dont want and push the stats we want to the database
+        stats = stats_data['stats']['minecraft:custom']
+        if 'minecraft:killed' in stats_data['stats']:
+            kill_data = stats_data['stats']['minecraft:killed']
+            stats.update(kill_data)
+
+        stats_to_exclude = {"minecraft:interact_with_furnace",
+        "minecraft:mob_kills",
+        "minecraft:interact_with_crafting_table",
+        "minecraft:drop",
+        "minecraft:open_chest",
+        "minecraft:play_time",
+        "minecraft:sneak_time",
+        "minecraft:jump"
+        }
+
+        #get world_id from database
         cursor = self.conn.cursor()
-        cursor.execute("""
-        INSERT INTO stats("UUID", "world_id", "stat_name", "stat_val") VALUES('1234', (SELECT "world_ID" FROM world WHERE world.mcuser_id = '1234' AND world.world_name = 'New_World'), 'time_swimming', '31');
-        """)
+        cursor.execute(f"select world_id from world where(UUID='{UUID}' and world_name='{stat_file.world_name}');")
+        results = cursor.fetchall()
+        world_id = results[0][0]
+
+
+        for key in stats_to_exclude:
+            if key in stats:
+                del stats[key]
+
+        for key, value in stats.items():
+            cursor = self.conn.cursor()
+            cursor.execute(f"INSERT INTO stats(stat_name, value, uuid, world_id) VALUES('{key}','{value}', '{UUID}', '{world_id}')")
+            self.conn.commit()
+
+        #push the stats we want to the database
+        
+        #cursor = self.conn.cursor()
+        #cursor.execute(f"INSERT INTO stats(stat_name, value) VALUES({key},{value})")
+        #self.conn.commit()
+
+    def testPush(self):
+        id = '13'
+        file = "test_fstring_11/29"
+        cursor = self.conn.cursor()
+        cursor.execute(f"INSERT INTO files(id,file_name) VALUES ('{id}','{file}');")
         self.conn.commit()
 
-minetraxDatabase = Database('postgres', '1234', 'localhost', 5432)
-minetraxDatabase.testPush()
+minetraxDatabase = Database('', '', 'localhost',5432)
+#minetraxDatabase.testPush()
 
 #search for file and return full path
 def findFiles(name,path):
@@ -80,10 +117,9 @@ def trackWorld(world, UUID):
         path = worldsPaths + world
         #search for the file
         filePath = findFiles(fileName,path)
-        print(filePath[0])
         #create a statistics file object
         newStatFileToPush = StatisticsFile(UUID, world, filePath[0])
-        #minetraxDatabase.push(newStatFileToPush)
+        minetraxDatabase.push(newStatFileToPush)
         #next push to DB
 
 def trackMostRecent(UUID):
@@ -100,15 +136,14 @@ def trackMostRecent(UUID):
         if os.path.getmtime(files) > os.path.getmtime(mostRecentFile):
             mostRecentFile = files
 
-    print(mostRecentFile)
 
     for name in worlds:
         if name in mostRecentFile:
             mostRecentWorldName = name
 
-    print(mostRecentWorldName)
     statFileToPush = StatisticsFile(UUID, mostRecentWorldName ,mostRecentFile)
-    #minetraxDatabase.push(newStatFileToPush)
+
+    minetraxDatabase.push(statFileToPush)
     #create a statistics file object
 
     #next push to DB
@@ -155,6 +190,4 @@ def setup(): # Put object definitions and other code in here
     pystray.MenuItem(queries[3], after_click)))
     icon.run()
 
-    """
-        INSERT INTO mcuser("UUID", username) VALUES ('4006', 'testing');
-        """
+
