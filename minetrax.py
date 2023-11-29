@@ -57,26 +57,33 @@ class Database:
         "minecraft:jump"
         }
 
+        #get world_id from database
+        cursor = self.conn.cursor()
+        cursor.execute(f"select world_id from world where(UUID='{UUID}' and world_name='{stat_file.world_name}');")
+        results = cursor.fetchall()
+        world_id = results[0][0]
+
+
         for key in stats_to_exclude:
             if key in stats:
                 del stats[key]
 
         for key, value in stats.items():
-            print(key, value)
+            cursor = self.conn.cursor()
+            cursor.execute(f"INSERT INTO stats(stat_name, value, uuid, world_id) VALUES('{key}','{value}', '{UUID}', '{world_id}')")
+            self.conn.commit()
 
         #push the stats we want to the database
         
         #cursor = self.conn.cursor()
-        #cursor.execute("""
-        #INSERT INTO 
-        #""")
+        #cursor.execute(f"INSERT INTO stats(stat_name, value) VALUES({key},{value})")
         #self.conn.commit()
 
     def testPush(self):
+        id = '13'
+        file = "test_fstring_11/29"
         cursor = self.conn.cursor()
-        cursor.execute("""
-        INSERT INTO files(id,file_name) VALUES ('12', 'test_from_app_11/15');
-        """)
+        cursor.execute(f"INSERT INTO files(id,file_name) VALUES ('{id}','{file}');")
         self.conn.commit()
 
 minetraxDatabase = Database('', '', 'localhost',5432)
@@ -110,7 +117,6 @@ def trackWorld(world, UUID):
         path = worldsPaths + world
         #search for the file
         filePath = findFiles(fileName,path)
-        print(filePath[0])
         #create a statistics file object
         newStatFileToPush = StatisticsFile(UUID, world, filePath[0])
         minetraxDatabase.push(newStatFileToPush)
