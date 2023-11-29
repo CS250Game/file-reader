@@ -1,2 +1,4 @@
 database.ini
+venv
+_pycache_
 /.vs/
