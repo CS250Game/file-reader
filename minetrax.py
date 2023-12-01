@@ -30,7 +30,7 @@ class StatisticsFile:
 
 
 class Database:
-    def __init__(self, username:str, password:str, host:str, port:int, database:str = 'test') -> None:
+    def __init__(self, username:str, password:str, host:str, port:int, database:str = 'mttesting') -> None:
         dsn = f"postgres://{username}:{password}@{host}:{port}/{database}"
         self.conn = psycopg2.connect(dsn=dsn)
 
@@ -59,7 +59,7 @@ class Database:
 
         #get world_id from database
         cursor = self.conn.cursor()
-        cursor.execute(f"select world_id from world where(UUID='{UUID}' and world_name='{stat_file.world_name}');")
+        cursor.execute(f"select world_id from world where(mcuser_id='{UUID}' and world_name='{stat_file.world_name}');")
         results = cursor.fetchall()
         world_id = results[0][0]
 
@@ -75,9 +75,9 @@ class Database:
 
         #push the stats we want to the database
         
-        #cursor = self.conn.cursor()
-        #cursor.execute(f"INSERT INTO stats(stat_name, value) VALUES({key},{value})")
-        #self.conn.commit()
+        cursor = self.conn.cursor()
+        cursor.execute(f"INSERT INTO stats(stat_name, value) VALUES({key},{value})")
+        self.conn.commit()
 
     def testPush(self):
         id = '13'
@@ -86,7 +86,7 @@ class Database:
         cursor.execute(f"INSERT INTO files(id,file_name) VALUES ('{id}','{file}');")
         self.conn.commit()
 
-minetraxDatabase = Database('', '', 'localhost',5432)
+minetraxDatabase = Database('postgres', '1234', 'localhost', 5432)
 #minetraxDatabase.testPush()
 
 #search for file and return full path
@@ -103,7 +103,7 @@ def findFiles(name,path):
 def findWorlds():
     for root, dirs, files in os.walk("C:\\Users\\"):
         if ".minecraft" in dirs: 
-           worldsPaths = root + "\\.minecraft\\saves\\saves\\"
+           worldsPaths = root + "\\.minecraft\\saves\\"
            return worldsPaths
 
 
