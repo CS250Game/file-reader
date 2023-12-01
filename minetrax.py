@@ -61,8 +61,19 @@ class Database:
         cursor = self.conn.cursor()
         cursor.execute(f"select world_id from world where(mcuser_id='{UUID}' and world_name='{stat_file.world_name}');")
         results = cursor.fetchall()
-        world_id = results[0][0]
 
+        #if the world does not exist in the db create this 
+        if len(results) == 0:
+            cursor = self.conn.cursor()
+            cursor.execute(f"INSERT INTO world(world_name, uuid) VALUES('{stat_file.world_name}','{UUID}');")
+            #after creating new world row pull the world id
+            cursor = self.conn.cursor()
+            cursor.execute(f"select world_id from world where(UUID='{UUID}' and world_name='{stat_file.world_name}');")
+            results = cursor.fetchall()
+  
+           
+        
+        world_id = results[0][0]
 
         for key in stats_to_exclude:
             if key in stats:
