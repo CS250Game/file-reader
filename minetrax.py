@@ -59,7 +59,7 @@ class Database:
 
         #get world_id from database
         cursor = self.conn.cursor()
-        cursor.execute(f"select world_id from world where(mcuser_id='{UUID}' and world_name='{stat_file.world_name}');")
+        cursor.execute(f"select world_id from world where(uuid='{UUID}' and world_name='{stat_file.world_name}');")
         results = cursor.fetchall()
 
         #if the world does not exist in the db create this 
@@ -68,7 +68,7 @@ class Database:
             cursor.execute(f"INSERT INTO world(world_name, uuid) VALUES('{stat_file.world_name}','{UUID}');")
             #after creating new world row pull the world id
             cursor = self.conn.cursor()
-            cursor.execute(f"select world_id from world where(UUID='{UUID}' and world_name='{stat_file.world_name}');")
+            cursor.execute(f"select world_id from world where(uuid='{UUID}' and world_name='{stat_file.world_name}');")
             results = cursor.fetchall()
   
            
@@ -81,23 +81,29 @@ class Database:
 
         for key, value in stats.items():
             cursor = self.conn.cursor()
-            cursor.execute(f"INSERT INTO stats(stat_name, value, uuid, world_id) VALUES('{key}','{value}', '{UUID}', '{world_id}')")
+            cursor.execute(f"INSERT INTO stats(stat_name, stat_val, uuid, world_id) VALUES('{key}','{value}', '{UUID}', '{world_id}')")
             self.conn.commit()
+
 
         #push the stats we want to the database
         
-        cursor = self.conn.cursor()
-        cursor.execute(f"INSERT INTO stats(stat_name, value) VALUES({key},{value})")
-        self.conn.commit()
+        #cursor = self.conn.cursor()
+        #cursor.execute(f"INSERT INTO stats(stat_name, value) VALUES({key},{value})")
+        #self.conn.commit()
 
-    def testPush(self):
-        id = '13'
-        file = "test_fstring_11/29"
+    #insert into user table
+    def Push_Username(self, UUID, username):
         cursor = self.conn.cursor()
-        cursor.execute(f"INSERT INTO files(id,file_name) VALUES ('{id}','{file}');")
-        self.conn.commit()
+        cursor.execute(f"select username from mcuser where(uuid='{UUID}');")
+        results = cursor.fetchall()
 
-minetraxDatabase = Database('postgres', '1234', 'localhost', 5432)
+        #if the world does not exist in the db create this 
+        if len(results) == 0:
+            cursor = self.conn.cursor()
+            cursor.execute(f"INSERT INTO mcuser(uuid,username) VALUES ('{UUID}','{username}');")
+            self.conn.commit()
+
+minetraxDatabase = Database('postgres', '1234', 'localhost',5432)
 #minetraxDatabase.testPush()
 
 #search for file and return full path
@@ -161,6 +167,9 @@ def trackMostRecent(UUID):
 
 
 global UUID
+global username
+
+username = ""
 #a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e
 UUID = ""
 
@@ -180,15 +189,21 @@ def after_click(icon, query):
 
     if str(query) == queries[0]:
         UUID = input("Enter UUID: ")
+        username = input("Enter Username: ")
+        minetraxDatabase.Push_Username(UUID, username)
         # icon.stop()
     elif str(query) == queries[1]:
         if UUID == "":
             UUID = input("Enter UUID: ")
+            username = input("Enter Username: ")
+            minetraxDatabase.Push_Username(UUID, username)
         world = input("Enter World Name: ")
         trackWorld(world,UUID)
     elif str(query) == queries[2]:
         if UUID == "":
             UUID = input("Enter UUID: ")
+            username = input("Enter Username: ")
+            minetraxDatabase.Push_Username(UUID, username)
         trackMostRecent(UUID)
     elif str(query) == queries[3]:
         icon.stop()
