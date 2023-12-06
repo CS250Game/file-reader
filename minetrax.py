@@ -26,9 +26,8 @@ class StatisticsFile:
         pass
 
 class Database:
-    def __init__(self, username:str, password:str, host:str, port:int, database:str = 'mttesting') -> None:
-        #dsn = f"postgres://{username}:{password}@{host}:{port}/{database}"
-        #self.conn = psycopg2.connect(dsn=dsn)
+    def __init__(self, api_url: str) -> None:
+        self.api_url = api_url
         pass
 
     def push(self, stat_file: StatisticsFile):
@@ -65,21 +64,15 @@ class Database:
         for key, value in stats.items():
             to_push['key'] = value
 
-        requests.post("http://127.0.0.1:5000/api/addworld", {UUID, stat_file.world_name, to_push}, headers={'content-type': 'application/json'})
+        r= requests.post(f"{self.api_url}/api/addworld", json={'uuid':UUID, 'worldname':stat_file.world_name, 'data':to_push}, headers={'content-type': 'application/json'})
+        print(r)
 
     #insert into user table
     def Push_Username(self, UUID, username):
-        cursor = self.conn.cursor()
-        cursor.execute(f"select username from mcuser where(uuid='{UUID}');")
-        results = cursor.fetchall()
+        r = requests.post(f"{self.api_url}/api/adduser", json={'uuid':UUID, 'username':username}, headers={'content-type': 'application/json'})
+        print(r)
 
-        #if the world does not exist in the db create this 
-        if len(results) == 0:
-            cursor = self.conn.cursor()
-            cursor.execute(f"INSERT INTO mcuser(uuid,username) VALUES ('{UUID}','{username}');")
-            self.conn.commit()
-
-minetraxDatabase = Database('postgres', '1234', 'localhost',5432)
+minetraxDatabase = Database('http://127.0.0.1:5000')
 #minetraxDatabase.testPush()
 
 #search for file and return full path
