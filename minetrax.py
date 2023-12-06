@@ -1,10 +1,9 @@
 import json
 import os
 #from sqlite3 import connect
-import psycopg2
+import requests
 import pystray
 from PIL import Image
-
 
 #pip install...
 class StatsFileNotFound(Exception):
@@ -26,13 +25,11 @@ class StatisticsFile:
         """Gets a statistic from value name."""
         pass
 
-
-
-
 class Database:
     def __init__(self, username:str, password:str, host:str, port:int, database:str = 'mttesting') -> None:
-        dsn = f"postgres://{username}:{password}@{host}:{port}/{database}"
-        self.conn = psycopg2.connect(dsn=dsn)
+        #dsn = f"postgres://{username}:{password}@{host}:{port}/{database}"
+        #self.conn = psycopg2.connect(dsn=dsn)
+        pass
 
     def push(self, stat_file: StatisticsFile):
         stats = stat_file.file_path
@@ -47,49 +44,28 @@ class Database:
             kill_data = stats_data['stats']['minecraft:killed']
             stats.update(kill_data)
 
-        stats_to_exclude = {"minecraft:interact_with_furnace",
-        "minecraft:mob_kills",
-        "minecraft:interact_with_crafting_table",
-        "minecraft:drop",
-        "minecraft:open_chest",
-        "minecraft:play_time",
-        "minecraft:sneak_time",
-        "minecraft:jump"
-        }
+        #Temporary for testing
+        stats_to_exclude = {}#{"minecraft:interact_with_furnace",
+        # "minecraft:mob_kills",
+        # "minecraft:interact_with_crafting_table",
+        # "minecraft:drop",
+        # "minecraft:open_chest",
+        # "minecraft:play_time",
+        # "minecraft:sneak_time",
+        # "minecraft:jump"
+        # }
 
-        #get world_id from database
-        cursor = self.conn.cursor()
-        cursor.execute(f"select world_id from world where(uuid='{UUID}' and world_name='{stat_file.world_name}');")
-        results = cursor.fetchall()
-
-        #if the world does not exist in the db create this 
-        if len(results) == 0:
-            cursor = self.conn.cursor()
-            cursor.execute(f"INSERT INTO world(world_name, uuid) VALUES('{stat_file.world_name}','{UUID}');")
-            #after creating new world row pull the world id
-            cursor = self.conn.cursor()
-            cursor.execute(f"select world_id from world where(uuid='{UUID}' and world_name='{stat_file.world_name}');")
-            results = cursor.fetchall()
-  
-           
-        
-        world_id = results[0][0]
+        world_id = stat_file.world_name
 
         for key in stats_to_exclude:
             if key in stats:
                 del stats[key]
 
+        to_push = {}
         for key, value in stats.items():
-            cursor = self.conn.cursor()
-            cursor.execute(f"INSERT INTO stats(stat_name, stat_val, uuid, world_id) VALUES('{key}','{value}', '{UUID}', '{world_id}')")
-            self.conn.commit()
+            to_push['key'] = value
 
-
-        #push the stats we want to the database
-        
-        #cursor = self.conn.cursor()
-        #cursor.execute(f"INSERT INTO stats(stat_name, value) VALUES({key},{value})")
-        #self.conn.commit()
+        requests.post("http://127.0.0.1:5000/api/addworld", {UUID, stat_file.world_name, to_push}, headers={'content-type': 'application/json'})
 
     #insert into user table
     def Push_Username(self, UUID, username):
@@ -173,16 +149,16 @@ username = ""
 #a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e
 UUID = ""
 
+
+
 #System tray icon stuff
 image = Image.open("img/Minetraxbackground.png")
-
 queries = [
     'Enter UUID',
     'Track World',
     'Track most recent world',
     'Exit'
 ]
-
 
 def after_click(icon, query):
     global UUID
@@ -215,5 +191,3 @@ def setup(): # Put object definitions and other code in here
     pystray.MenuItem(queries[2], after_click),
     pystray.MenuItem(queries[3], after_click)))
     icon.run()
-
-

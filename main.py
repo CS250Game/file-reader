@@ -1,12 +1,2 @@
 from minetrax import *
-
-
 setup()
-
-
-           
-
-
-
-
-
