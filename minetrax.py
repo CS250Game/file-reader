@@ -1,9 +1,11 @@
 import json
 import os
-#from sqlite3 import connect
 import requests
 import pystray
+import tkinter as tk
 from PIL import Image
+import asyncio
+from windows_toasts import Toast, WindowsToaster, ToastDisplayImage
 
 #pip install...
 class StatsFileNotFound(Exception):
@@ -13,6 +15,12 @@ class StatsFileNotFound(Exception):
 class StatNotFound(Exception):
     """Base error for a statistic that was not found within a stat file."""
     pass
+
+global UUID
+global username
+username = ""
+#a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e
+UUID = ""
 
 class StatisticsFile:
     def __init__(self, uuid: str, world_name: str, file_path) -> None:
@@ -65,15 +73,25 @@ class Database:
             to_push['key'] = value
 
         r= requests.post(f"{self.api_url}/api/addworld", json={'uuid':UUID, 'worldname':stat_file.world_name, 'data':to_push}, headers={'content-type': 'application/json'})
+        print("adding world")
         print(r)
 
     #insert into user table
-    def Push_Username(self, UUID, username):
+    def Push_Username(self, UUID: str, username: str):
         r = requests.post(f"{self.api_url}/api/adduser", json={'uuid':UUID, 'username':username}, headers={'content-type': 'application/json'})
+        print("username")
         print(r)
 
 minetraxDatabase = Database('http://127.0.0.1:5000')
 #minetraxDatabase.testPush()
+
+def notification(message: str, title: str = 'MineTrax', image_path: str = "img/Minetraxbackground.png"):
+    toaster = WindowsToaster("MineTrax")
+    new_toast = Toast()
+    new_toast.text_fields = [message]
+    if image_path is not None:
+        new_toast.AddImage(ToastDisplayImage.fromPath(str(os.path.realpath(open(image_path).name))))
+    toaster.show_toast(new_toast)
 
 #search for file and return full path
 def findFiles(name,path):
@@ -109,7 +127,6 @@ def trackWorld(world, UUID):
         #next push to DB
 
 def trackMostRecent(UUID):
-    
     worldsPaths = findWorlds()
     worlds = os.listdir(worldsPaths)
     fileName = UUID + ".json"
@@ -134,20 +151,41 @@ def trackMostRecent(UUID):
 
     #next push to DB
 
+def prompt_info():
+    UUID_text, user_text = "", ""
+    def on_button_click():
+        nonlocal UUID_text, user_text
+        UUID_text = UUID_entry.get()
+        user_text = user_entry.get()
+        window.destroy()
 
-global UUID
-global username
+    window = tk.Tk()
+    window.title("Minetrax Setup")
+    window.geometry("200x150")
 
-username = ""
-#a5d5ab98-326c-4d57-8be3-dc4e7a81bd0e
-UUID = ""
+    UUID_label = tk.Label(window, text="UUID")
+    UUID_label.pack()
 
+    UUID_entry = tk.Entry(window)
+    UUID_entry.pack()
 
+    user_label = tk.Label(window, text="Username")
+    user_label.pack()
+
+    user_entry = tk.Entry(window)
+    user_entry.pack()
+
+    button = tk.Button(window, text="Okay", command=on_button_click)
+    button.pack()
+
+    window.mainloop()
+
+    return [UUID_text, user_text]
 
 #System tray icon stuff
 image = Image.open("img/Minetraxbackground.png")
 queries = [
-    'Enter UUID',
+    'Setup',
     'Track World',
     'Track most recent world',
     'Exit'
@@ -157,10 +195,16 @@ def after_click(icon, query):
     global UUID
 
     if str(query) == queries[0]:
-        UUID = input("Enter UUID: ")
-        username = input("Enter Username: ")
-        minetraxDatabase.Push_Username(UUID, username)
-        # icon.stop()
+        given_uuid, given_user = prompt_info()
+        if None in [given_uuid, given_user]:
+            #Left fields empty
+            pass
+        print(given_user)
+        UUID = given_uuid
+        username = given_user
+        try: minetraxDatabase.Push_Username(given_uuid, given_user)
+        except requests.exceptions.ConnectionError as e: notification(message=f"Failed to update remote server. {e}")
+        notification(message=f"Success, now tracking stats for {given_user}")
     elif str(query) == queries[1]:
         if UUID == "":
             UUID = input("Enter UUID: ")
@@ -168,6 +212,7 @@ def after_click(icon, query):
             minetraxDatabase.Push_Username(UUID, username)
         world = input("Enter World Name: ")
         trackWorld(world,UUID)
+        notification(message=f"Now tracking world '{world}' for user {username}")
     elif str(query) == queries[2]:
         if UUID == "":
             UUID = input("Enter UUID: ")
@@ -177,10 +222,12 @@ def after_click(icon, query):
     elif str(query) == queries[3]:
         icon.stop()
 
-def setup(): # Put object definitions and other code in here
+async def main():
+    notification(message='MineTrax is running in the background. For setup, click the icon in the taskbar.')
     icon = pystray.Icon("MT", image, "Minetrax", menu=pystray.Menu(
     pystray.MenuItem(queries[0], after_click),
     pystray.MenuItem(queries[1], after_click),
     pystray.MenuItem(queries[2], after_click),
     pystray.MenuItem(queries[3], after_click)))
-    icon.run()
+    await asyncio.to_thread(icon.run)
+    print("Closing")
